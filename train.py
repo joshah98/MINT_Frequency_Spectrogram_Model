@@ -1,6 +1,5 @@
 from utils.model import Simp_Model
 import utils.visualization as visualization
-from torch import nn
 import torch
 from tqdm import tqdm
 from myargs import args
@@ -9,10 +8,17 @@ import numpy as np
 import utils.dataset as dataset
 
 
+def save(model, optim, name):
+
+  state_dict = model.state_dict()
+  torch.save({'state_dict': state_dict,
+              'optimizer': optim}, name)
+
+
 def train():
 
     # define model
-    model = Simp_Model()
+    model = Simp_Model(0.55)
     
     #for tensorboard
     writer = visualization.writer
@@ -54,6 +60,7 @@ def train():
         lossfn = lossfn.cuda()
 
     start_epoch = 1
+    val_score = 0
 
     for epoch in range(start_epoch, args.num_epoch):
 
@@ -154,6 +161,11 @@ def train():
                         val_classification_score,
                         val_loss,
                     ))
+                
+                if(val_classification_score > val_score):
+                    save(model, optimizer, ("./save4/%03d.ckpt" % epoch))
+                    val_score = val_classification_score
+                    print("Saving model")
                 
                 writer.add_scalar('test/loss', val_loss, epoch)
                 writer.add_scalar('test/accuracy', val_classification_score, epoch)
